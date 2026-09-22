@@ -74,4 +74,13 @@ def extrair_dados_fatura(texto_bruto, nome_arquivo):
             # Organiza no formato exigido: AAAA-MM
             dados["referencia"] = f"{ano}-{mes}"
 
+    # --- LÓGICA DE EXTRAÇÃO DO DOCUMENTO (CPF/CNPJ) DO CLIENTE ---
+    # Este padrão busca especificamente as linhas ligadas ao cliente, ignorando o CNPJ da distribuidora no topo
+    padrao_documento = r"(?:CPF/CNPJ|Documento|CNPJ/CPF)\s*\.*:\s*([\d\./-]+)"
+    busca_documento = re.search(padrao_documento, texto_bruto, re.IGNORECASE)
+    
+    if busca_documento:
+        # Pega o documento extraído e limpa espaços extras nas pontas
+        dados["documento"] = busca_documento.group(1).strip()
+
     return dados
