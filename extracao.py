@@ -83,4 +83,59 @@ def extrair_dados_fatura(texto_bruto, nome_arquivo):
         # Pega o documento extraído e limpa espaços extras nas pontas
         dados["documento"] = busca_documento.group(1).strip()
 
+    # --- LÓGICA DE EXTRAÇÃO DAS INFORMAÇÕES DE MEDIÇÃO ---
+    
+    # 1. Busca da Leitura Anterior
+    padrao_anterior = r"(?:Leitura anterior|Anterior.*?|Data anterior.*?Indice)\s*\.*\s*(?::|-)?\s*([\d\.]+)"
+    busca_anterior = re.search(padrao_anterior, texto_bruto, re.IGNORECASE)
+    if busca_anterior:
+        texto_ant = busca_anterior.group(1).replace(".", "")
+        if texto_ant.isdigit():
+            dados["leitura_anterior"] = int(texto_ant)
+
+    # 2. Busca da Leitura Atual
+    padrao_atual = r"(?:Leitura atual|Atual.*?|Data atual.*?Indice)\s*\.*\s*(?::|-)?\s*([\d\.]+)"
+    busca_atual = re.search(padrao_atual, texto_bruto, re.IGNORECASE)
+    if busca_atual:
+        texto_at = busca_atual.group(1).replace(".", "")
+        if texto_at.isdigit():
+            dados["leitura_atual"] = int(texto_at)
+
+    # 3. Busca do Consumo Faturado
+    padrao_consumo = r"(?:Consumo faturado|CONSUMO\.|Consumo do mes)\s*\.*\s*(?::)?\s*([\d\.]+)"
+    busca_consumo = re.search(padrao_consumo, texto_bruto, re.IGNORECASE)
+    if busca_consumo:
+        texto_cons = busca_consumo.group(1).replace(".", "")
+        if texto_cons.isdigit():
+            dados["consumo_kwh"] = int(texto_cons)
+
+    # --- LÓGICA DE EXTRAÇÃO DOS CAMPOS FINAIS ---
+    
+        # --- LÓGICA DE EXTRAÇÃO DAS INFORMAÇÕES DE MEDIÇÃO ---
+    
+    # 1. Busca da Leitura Anterior (Captura o número imediatamente antes de kWh)
+    padrao_anterior = r"(?:Leitura anterior|Anterior.*?)\s*(?::|-|Indice)?\s*([\d\.]+)\s*kWh"
+    busca_anterior = re.search(padrao_anterior, texto_bruto, re.IGNORECASE)
+    if busca_anterior:
+        texto_ant = busca_anterior.group(1).replace(".", "")
+        if texto_ant.isdigit():
+            dados["leitura_anterior"] = int(texto_ant)
+
+    # 2. Busca da Leitura Atual (Captura o número imediatamente antes de kWh)
+    padrao_atual = r"(?:Leitura atual|Atual.*?)\s*(?::|-|Indice)?\s*([\d\.]+)\s*kWh"
+    busca_atual = re.search(padrao_atual, texto_bruto, re.IGNORECASE)
+    if busca_atual:
+        texto_at = busca_atual.group(1).replace(".", "")
+        if texto_at.isdigit():
+            dados["leitura_atual"] = int(texto_at)
+
+    # 3. Busca do Consumo Faturado (Captura o número imediatamente antes de kWh)
+    padrao_consumo = r"(?:Consumo faturado|CONSUMO\.|Consumo do mes)\s*(?::|-)?\s*([\d\.]+)\s*kWh"
+    busca_consumo = re.search(padrao_consumo, texto_bruto, re.IGNORECASE)
+    if busca_consumo:
+        texto_cons = busca_consumo.group(1).replace(".", "")
+        if texto_cons.isdigit():
+            dados["consumo_kwh"] = int(texto_cons)
+
+
     return dados
