@@ -1,44 +1,58 @@
 from pathlib import Path
 import json
-# Importamos a função que você estruturou e salvou no seu Módulo 1
 from extracao import extrair_dados_fatura 
+from conferencia import conferir_dados_fatura
+from regras import aplicar_regras_fatura
 
 def executar_sistema():
     pasta_dados = Path("dados")
     
-    # Verificação de segurança: confere se a pasta dados realmente existe
     if not pasta_dados.exists():
-        print("Erro: A pasta 'dados' não foi encontrada. Crie a pasta e coloque as faturas dentro.")
+        print("Erro: A pasta 'dados' não foi encontrada.")
         return
 
-    # Lista onde guardaremos o dicionário de cada uma das faturas processadas
-    faturas_processadas = []
+    faturas_finais = []
+    todas_inconsistencias = []
     
-    # Encontra todos os arquivos de texto (.txt) dentro da pasta dados
     arquivos_encontrados = list(pasta_dados.glob("*.txt"))
     
-    if not arquivos_encontrados:
-        print("Aviso: Nenhum arquivo .txt encontrado dentro da pasta 'dados'.")
-        return
-
     for arquivo_path in arquivos_encontrados:
-        print(f"Lendo e processando o arquivo: {arquivo_path.name}")
-        
-        # Abre e lê o texto bruto de cada fatura
         with open(arquivo_path, "r", encoding="utf-8") as arquivo:
             texto_bruto = arquivo.read()
         
-        # Executa o seu Módulo 1 (Extração) passando o texto e o nome do arquivo
-        dados_da_fatura = extrair_dados_fatura(texto_bruto, arquivo_path.name)
+        # 1. ETAPA DE EXTRAÇÃO (Módulo 1)
+        dados_brutos = extrair_dados_fatura(texto_bruto, arquivo_path.name)
         
-        # Guarda o dicionário extraído na nossa lista
-        faturas_processadas.append(dados_da_fatura)
+        # 2. ETAPA DE CONFERÊNCIA (Módulo 2)
+        erros_fatura = conferir_dados_fatura(dados_brutos, texto_bruto)
+        if erros_fatura:
+            todas_inconsistencias.extend(erros_fatura)
             
-    # Imprime no terminal o resultado em formato JSON limpo e estruturado para você auditar
+        # 3. ETAPA DE REGRAS (Módulo 3)
+        dados_com_regras = aplicar_regras_fatura(dados_brutos)
+        faturas_finais.append(dados_com_regras)
+            
+    # --- GERAR O ARQUIVO SAÍDA JSON ---
+    with open("resultado.json", "w", encoding="utf-8") as f_json:
+        json.dump(faturas_finais, f_json, indent=4, ensure_ascii=False, default=str)
+        
+    # --- EXIBIÇÃO DOS RELATÓRIOS NO TERMINAL ---
     print("\n=======================================================")
-    print("      RESULTADO DA EXTRAÇÃO AUTOMATIZADA (MÓDULO 1)     ")
+    print("      RESULTADO FINAL PROCESSADO (MÓDULOS 1, 2 E 3)     ")
     print("=======================================================")
-    print(json.dumps(faturas_processadas, indent=4, ensure_ascii=False, default=str))
+    print(json.dumps(faturas_finais, indent=4, ensure_ascii=False, default=str))
+
+    print("\n=======================================================")
+    print("      RELATÓRIO DE INCONSISTÊNCIAS COMPLETO            ")
+    print("=======================================================")
+    if todas_inconsistencias:
+        print(f"Atenção! Foram encontradas {len(todas_inconsistencias)} inconsistências nos dados:\n")
+        for idx, erro in enumerate(todas_inconsistencias, 1):
+            print(f"[{idx}] Arquivo: {erro['arquivo']} | Critério: {erro['criterio']}")
+            print(f"    Mensagem: {erro['mensagem']}\n")
+    else:
+        print("Sucesso! Nenhuma inconsistência detectada.")
+    print("O arquivo 'resultado.json' foi gerado com sucesso no diretório atual.")
 
 if __name__ == "__main__":
     executar_sistema()
